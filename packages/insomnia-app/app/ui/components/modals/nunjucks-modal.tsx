@@ -82,7 +82,7 @@ class NunjucksModal extends PureComponent<Props, State> {
           handleGetRenderContext={handleGetRenderContext}
         />
       );
-    } else if (defaultTemplate.indexOf('{%') === 0) {
+    } else if (defaultTemplate.indexOf('{%') === 0 || defaultTemplate.indexOf('"{%') === 0) {
       title = 'Tag';
       editor = (
         <TagEditor

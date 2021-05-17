@@ -93,7 +93,7 @@ export function tokenizeTag(tagStr: string) {
   // ~~~~~~~~ //
   // Sanitize //
   // ~~~~~~~~ //
-  const withoutEnds = tagStr.trim().replace(/^{%/, '').replace(/%}$/, '').trim();
+  const withoutEnds = tagStr.trim().replace(/^"{%/, '').replace(/^{%/, '').replace(/%}"$/, '').replace(/%}$/, '').trim();
   const nameMatch = withoutEnds.match(/^[a-zA-Z_$][0-9a-zA-Z_$]*/);
   const name = nameMatch ? nameMatch[0] : withoutEnds;
   const argsStr = withoutEnds.slice(name.length);
@@ -213,7 +213,7 @@ export function unTokenizeTag(tagData: NunjucksParsedTag) {
   }
 
   const argsStr = args.join(', ');
-  return `{% ${tagData.name} ${argsStr} %}`;
+  return `"{% ${tagData.name} ${argsStr} %}"`;
 }
 
 /** Get the default Nunjucks string for an extension */

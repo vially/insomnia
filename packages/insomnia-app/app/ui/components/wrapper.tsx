@@ -96,7 +96,7 @@ import { GrpcDispatchModalWrapper } from '../context/grpc';
 import WrapperMigration from './wrapper-migration';
 import type { ImportOptions } from '../redux/modules/global';
 import WrapperAnalytics from './wrapper-analytics';
-import { HandleGetRenderContext, HandleRender } from '../../common/render';
+import { getRenderedApiSpec, HandleGetRenderContext, HandleRender } from '../../common/render';
 import { RequestGroup } from '../../models/request-group';
 
 const spectral = new Spectral();
@@ -314,7 +314,7 @@ class Wrapper extends PureComponent<WrapperProps, State> {
   }
 
   async _handleWorkspaceActivityChange(workspaceId: string, nextActivity: GlobalActivity) {
-    const { activity, activeApiSpec, handleSetActiveActivity } = this.props;
+    const { activity, activeApiSpec, activeEnvironment, handleSetActiveActivity } = this.props;
 
     // Remember last activity on workspace for later, but only if it isn't HOME
     if (nextActivity !== ACTIVITY_HOME) {
@@ -330,12 +330,14 @@ class Wrapper extends PureComponent<WrapperProps, State> {
       return;
     }
 
+    const renderedSpec = await getRenderedApiSpec(activeApiSpec, activeEnvironment?._id);
+
     // Handle switching away from the spec design activity. For this, we want to generate
     // requests that can be accessed from debug or test.
     // If there are errors in the spec, show the user a warning first
-    const results = await spectral.run(activeApiSpec.contents);
+    const results = await spectral.run(renderedSpec.contents);
 
-    if (activeApiSpec.contents && results && results.length) {
+    if (renderedSpec.contents && results && results.length) {
       showModal(AlertModal, {
         title: 'Error Generating Configuration',
         message:
@@ -353,6 +355,7 @@ class Wrapper extends PureComponent<WrapperProps, State> {
     // Delaying generation so design to debug mode is smooth
     handleSetActiveActivity(nextActivity);
     setTimeout(() => {
+      // Should import after rendering, but store the unrendered result
       importRaw(activeApiSpec.contents, {
         getWorkspaceId: () => Promise.resolve(workspaceId),
         enableDiffBasedPatching: true,

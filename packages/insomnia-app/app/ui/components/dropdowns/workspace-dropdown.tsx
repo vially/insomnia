@@ -20,7 +20,7 @@ import { database as db } from '../../../common/database';
 import type { WorkspaceAction } from '../../../plugins';
 import { ConfigGenerator, getConfigGenerators, getWorkspaceActions } from '../../../plugins';
 import * as pluginContexts from '../../../plugins/context';
-import { RENDER_PURPOSE_NO_RENDER } from '../../../common/render';
+import { getRenderedApiSpec, RENDER_PURPOSE_NO_RENDER } from '../../../common/render';
 import type { Environment } from '../../../models/environment';
 import { showGenerateConfigModal } from '../modals/generate-config-modal';
 import { getWorkspaceLabel } from '../../../common/get-workspace-label';
@@ -119,9 +119,11 @@ class WorkspaceDropdown extends PureComponent<Props, State> {
   }
 
   async _handleGenerateConfig(label: string) {
-    const { activeApiSpec } = this.props;
+    const { activeApiSpec, activeEnvironment } = this.props;
+    const renderedSpec = await getRenderedApiSpec(activeApiSpec, activeEnvironment?._id);
+
     showGenerateConfigModal({
-      apiSpec: activeApiSpec,
+      apiSpec: renderedSpec,
       activeTabLabel: label,
     });
   }

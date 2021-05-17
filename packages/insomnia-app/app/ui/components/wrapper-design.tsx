@@ -15,6 +15,9 @@ import { parseApiSpec } from '../../common/api-specs';
 import type { GlobalActivity } from '../../common/constants';
 import { ACTIVITY_HOME, AUTOBIND_CFG } from '../../common/constants';
 import WorkspacePageHeader from './workspace-page-header';
+import { getRenderedApiSpec } from '../../common/render';
+import SelectModal from './modals/select-modal';
+import { showModal } from './modals';
 
 const spectral = new Spectral();
 
@@ -32,6 +35,7 @@ interface State {
     line: number;
     type: 'error' | 'warning';
   }>;
+  renderedSpec?: ApiSpec;
 }
 
 @autoBindMethodsForReact(AUTOBIND_CFG)
@@ -44,6 +48,7 @@ class WrapperDesign extends PureComponent<Props, State> {
     this.state = {
       previewHidden: props.wrapperProps.activeWorkspaceMeta.previewHidden || false,
       lintMessages: [],
+      renderedSpec: undefined,
     };
   }
 
@@ -97,6 +102,34 @@ class WrapperDesign extends PureComponent<Props, State> {
     editor.scrollToSelection(chStart, chEnd, lineStart, lineEnd);
   }
 
+  autocompleteSnippets() {
+    return [
+      {
+        name: 'Insert plugin',
+        displayValue: '',
+        value: async () => {
+          return new Promise(resolve => {
+            showModal(SelectModal, {
+              title: 'Insert Plugin',
+              message: 'Select a plugin to insert',
+              value: '__NULL__',
+              options: [
+                {
+                  name: '-- Select Request --',
+                  value: '__NULL__',
+                }, {
+                  name: 'Okta',
+                  value: 'x-kong-plugin-okta: "{% oktaconfig %}"',
+                },
+              ],
+              onDone: v => resolve(v),
+            });
+          });
+        },
+      },
+    ];
+  }
+
   _handleLintClick(notice) {
     // TODO: Export Notice from insomnia-components and use here, instead of {}
     const { start, end } = notice._range;
@@ -105,12 +138,15 @@ class WrapperDesign extends PureComponent<Props, State> {
   }
 
   async _reLint() {
-    const { activeApiSpec } = this.props.wrapperProps;
+    const { activeApiSpec, activeEnvironment } = this.props.wrapperProps;
+
+    const renderedSpec = await getRenderedApiSpec(activeApiSpec, activeEnvironment?._id);
 
     // Lint only if spec has content
-    if (activeApiSpec.contents.length !== 0) {
-      const results = await spectral.run(activeApiSpec.contents);
+    if (renderedSpec.contents.length !== 0) {
+      const results = await spectral.run(renderedSpec.contents);
       this.setState({
+        renderedSpec,
         lintMessages: results.map(r => ({
           type: r.severity === 0 ? 'error' : 'warning',
           message: `${r.code} ${r.message}`,
@@ -121,6 +157,7 @@ class WrapperDesign extends PureComponent<Props, State> {
       });
     } else {
       this.setState({
+        renderedSpec,
         lintMessages: [],
       });
     }
@@ -144,7 +181,7 @@ class WrapperDesign extends PureComponent<Props, State> {
   }
 
   _renderEditor() {
-    const { activeApiSpec, settings } = this.props.wrapperProps;
+    const { activeApiSpec, settings, handleRender, handleGetRenderContext, isVariableUncovered } = this.props.wrapperProps;
     const { lintMessages } = this.state;
     return (
       <div className="column tall theme--pane__body">
@@ -161,6 +198,11 @@ class WrapperDesign extends PureComponent<Props, State> {
             defaultValue={activeApiSpec.contents}
             onChange={this._handleOnChange}
             uniquenessKey={activeApiSpec._id}
+            getAutocompleteSnippets={this.autocompleteSnippets}
+            render={handleRender}
+            getRenderContext={handleGetRenderContext}
+            isVariableUncovered={isVariableUncovered}
+            nunjucksPowerUserMode={settings.nunjucksPowerUserMode}
           />
         </div>
         {lintMessages.length > 0 && (
@@ -171,17 +213,16 @@ class WrapperDesign extends PureComponent<Props, State> {
   }
 
   _renderPreview() {
-    const { activeApiSpec } = this.props.wrapperProps;
-    const { previewHidden } = this.state;
+    const { previewHidden, renderedSpec } = this.state;
 
-    if (previewHidden) {
+    if (previewHidden || !renderedSpec) {
       return null;
     }
 
     let swaggerUiSpec;
 
     try {
-      swaggerUiSpec = parseApiSpec(activeApiSpec.contents).contents;
+      swaggerUiSpec = parseApiSpec(renderedSpec.contents).contents;
     } catch (err) {}
 
     if (!swaggerUiSpec) {
@@ -191,7 +232,7 @@ class WrapperDesign extends PureComponent<Props, State> {
     return (
       <div id="swagger-ui-wrapper">
         <ErrorBoundary
-          invalidationKey={activeApiSpec.contents}
+          invalidationKey={renderedSpec.contents}
           renderError={() => (
             <div className="text-left margin pad">
               <h3>An error occurred while trying to render Swagger UI 😢</h3>
@@ -240,10 +281,15 @@ class WrapperDesign extends PureComponent<Props, State> {
   }
 
   _renderPageSidebar() {
-    const { activeApiSpec } = this.props.wrapperProps;
+    const { renderedSpec } = this.state;
+
+    if (!renderedSpec) {
+      return null;
+    }
+
     return (
       <ErrorBoundary
-        invalidationKey={activeApiSpec.contents}
+        invalidationKey={renderedSpec.contents}
         renderError={() => (
           <div className="text-left margin pad">
             <h4>An error occurred while trying to render your spec's navigation. 😢</h4>
@@ -253,7 +299,7 @@ class WrapperDesign extends PureComponent<Props, State> {
             </p>
           </div>
         )}>
-        <SpecEditorSidebar apiSpec={activeApiSpec} handleSetSelection={this._handleSetSelection} />
+        <SpecEditorSidebar apiSpec={renderedSpec} handleSetSelection={this._handleSetSelection} />
       </ErrorBoundary>
     );
   }
@@ -261,6 +307,7 @@ class WrapperDesign extends PureComponent<Props, State> {
   render() {
     return (
       <PageLayout
+        key={this.state.renderedSpec?.contents}
         wrapperProps={this.props.wrapperProps}
         renderPageHeader={this._renderPageHeader}
         renderPaneOne={this._renderEditor}

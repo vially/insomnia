@@ -12,6 +12,7 @@ import orderedJSON from 'json-order';
 import * as templatingUtils from '../templating/utils';
 import type { GrpcRequest, GrpcRequestBody } from '../models/grpc-request';
 import { isRequestGroup } from '../models/helpers/is-model';
+import { ApiSpec } from '../models/api-spec';
 
 export const KEEP_ON_ERROR = 'keep';
 export const THROW_ON_ERROR = 'throw';
@@ -278,7 +279,7 @@ export async function render<T>(
   return next<T>(newObj, name, true);
 }
 export async function getRenderContext(
-  request: Request | GrpcRequest | null,
+  request: Request | GrpcRequest | ApiSpec | null,
   environmentId: string | null,
   ancestors: Array<BaseModel> | null = null,
   purpose: RenderPurpose | null = null,
@@ -400,6 +401,30 @@ export async function getRenderedGrpcRequest(
   );
   renderedRequest.description = await render(description, renderContext, null, KEEP_ON_ERROR);
   return renderedRequest;
+}
+
+export async function getRenderedApiSpec(
+  apiSpec: ApiSpec,
+  environmentId?: string | null,
+  purpose?: RenderPurpose,
+  extraInfo?: ExtraRenderInfo,
+  ) {
+  const renderContext = await getRenderContext(
+    apiSpec,
+    environmentId || null,
+    null,
+    purpose,
+    extraInfo || null,
+  );
+
+  apiSpec.contents = apiSpec.contents.replace(/"{%/g, '{%').replace(/%}"/g, '%}');
+
+  const renderedSpec = await render(
+    apiSpec,
+    renderContext,
+  );
+
+  return renderedSpec;
 }
 
 export async function getRenderedGrpcRequestMessage(
@@ -534,7 +559,7 @@ function _getOrderedEnvironmentKeys(finalRenderContext: Record<string, any>): Ar
   });
 }
 
-async function _getRequestAncestors(request: Request | GrpcRequest | null): Promise<Array<BaseModel>> {
+async function _getRequestAncestors(request: Request | GrpcRequest | ApiSpec | null): Promise<Array<BaseModel>> {
   return await db.withAncestors(request, [
     models.request.type,
     models.grpcRequest.type,

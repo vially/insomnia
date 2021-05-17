@@ -1,0 +1,25 @@
+{
+  "name": "insomnia-plugin-kong-okta",
+  "version": "2.2.35",
+  "author": "Kong <office@konghq.com>",
+  "description": "Kong Okta template tag",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kong/insomnia.git",
+    "directory": "plugins/insomnia-plugin-kong-okta"
+  },
+  "bugs": {
+    "url": "https://github.com/Kong/insomnia/issues"
+  },
+  "main": "index.js",
+  "insomnia": {
+    "name": "okta",
+    "core": true,
+    "unlisted": true
+  },
+  "scripts": {
+    "test": "node --version"
+  },
+  "gitHead": "e46bf021cf4b4379e31d2b2d9025d476d6839fa1"
+}
