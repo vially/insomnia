@@ -195,7 +195,7 @@ export function tokenizeTag(tagStr: string) {
 }
 
 /** Convert a tokenized tag back into a Nunjucks string */
-export function unTokenizeTag(tagData: NunjucksParsedTag) {
+export function unTokenizeTag(tagData: NunjucksParsedTag, padWith = '') {
   const args: Array<string> = [];
 
   for (const arg of tagData.args) {
@@ -213,7 +213,7 @@ export function unTokenizeTag(tagData: NunjucksParsedTag) {
   }
 
   const argsStr = args.join(', ');
-  return `"{% ${tagData.name} ${argsStr} %}"`;
+  return `${padWith}{% ${tagData.name} ${argsStr} %}${padWith}`;
 }
 
 /** Get the default Nunjucks string for an extension */

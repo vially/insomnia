@@ -307,12 +307,11 @@ class WrapperDesign extends PureComponent<Props, State> {
   render() {
     return (
       <PageLayout
-        key={this.state.renderedSpec?.contents}
         wrapperProps={this.props.wrapperProps}
         renderPageHeader={this._renderPageHeader}
         renderPaneOne={this._renderEditor}
-        renderPaneTwo={this._renderPreview}
-        renderPageSidebar={this._renderPageSidebar}
+        renderPaneTwo={() => this._renderPreview()}
+        renderPageSidebar={() => this._renderPageSidebar()}
       />
     );
   }

@@ -31,7 +31,7 @@ interface Props {
   handleRender: HandleRender;
   handleGetRenderContext: HandleGetRenderContext;
   defaultValue: string;
-  onChange: (...args: Array<any>) => any;
+  onChange: (template: string | null) => void;
   workspace: Workspace;
 }
 
@@ -350,6 +350,7 @@ class TagEditor extends PureComponent<Props, State> {
     let preview = '';
     let error = '';
     let activeTagData: NunjucksParsedTag | null = tagData;
+    const originalTagPaddedWithSpeechMarks = this.props.defaultValue.startsWith('"') && this.props.defaultValue.endsWith('"');
 
     if (!activeTagData && tagDefinition) {
       activeTagData = TagEditor._getDefaultTagData(tagDefinition);
@@ -358,7 +359,7 @@ class TagEditor extends PureComponent<Props, State> {
         name: 'custom',
         displayName: 'Custom',
         args: [],
-        rawValue: templateUtils.unTokenizeTag(this.state.activeTagData),
+        rawValue: templateUtils.unTokenizeTag(this.state.activeTagData, originalTagPaddedWithSpeechMarks ? '"' : ''),
       };
     }
 
@@ -369,7 +370,7 @@ class TagEditor extends PureComponent<Props, State> {
         template =
           typeof activeTagData.rawValue === 'string'
             ? activeTagData.rawValue
-            : templateUtils.unTokenizeTag(activeTagData);
+            : templateUtils.unTokenizeTag(activeTagData, originalTagPaddedWithSpeechMarks ? '"' : '');
         preview = await handleRender(template);
       } catch (err) {
         error = err.message;
