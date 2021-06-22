@@ -1,4 +1,4 @@
-import { database as db } from './database';
+import { database } from './database';
 import { types as modelTypes, stats, BaseModel } from '../models';
 import { send } from '../network/network';
 import { getBodyBuffer } from '../models/response';
@@ -12,7 +12,7 @@ type SettingsOverride = Pick<Settings, 'validateSSL'>;
 
 export async function getSendRequestCallbackMemDb(environmentId, memDB, settingsOverrides?: SettingsOverride) {
   // Initialize the DB in-memory and fill it with data if we're given one
-  await db.init(
+  await database.init(
     modelTypes(),
     {
       inMemoryOnly: true,
@@ -31,7 +31,7 @@ export async function getSendRequestCallbackMemDb(environmentId, memDB, settings
     }
   }
 
-  await db.batchModifyDocs({
+  await database.batchModifyDocs({
     upsert: docs,
     remove: [],
   });
