@@ -89,10 +89,9 @@ export async function runInsomniaTests(
     ),
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires -- Load lazily when needed, otherwise this require slows down the entire CLI.
-  const { getSendRequestCallbackMemDb } = require('insomnia-send-request');
+  const { getSendRequestCallbackMemDb } = await import('insomnia-send-request');
 
-  const sendRequest = await getSendRequestCallbackMemDb(environment._id, db);
+  const sendRequest = await getSendRequestCallbackMemDb({ environmentId: environment._id, memDB: db });
   return await noConsoleLog(() =>
     runTestsCli(testFileContents, {
       reporter,

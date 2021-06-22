@@ -4,7 +4,7 @@ import { send } from '../network/network';
 import { getBodyBuffer } from '../models/response';
 import * as plugins from '../plugins';
 
-export async function getSendRequestCallbackMemDb(environmentId, memDB) {
+export async function getSendRequestCallbackMemDb({ environmentId, memDB }: { environmentId?: string; memDB: any; }) {
   // Initialize the DB in-memory and fill it with data if we're given one
   await db.init(
     modelTypes(),
@@ -27,22 +27,22 @@ export async function getSendRequestCallbackMemDb(environmentId, memDB) {
     remove: [],
   });
   // Return callback helper to send requests
-  return async function sendRequest(requestId) {
-    return sendAndTransform(requestId, environmentId);
+  return async function sendRequest(requestId: string) {
+    return sendAndTransform({ requestId, environmentId });
   };
 }
-export function getSendRequestCallback(environmentId) {
-  return async function sendRequest(requestId) {
+export function getSendRequestCallback(environmentId?: string) {
+  return async function sendRequest(requestId: string) {
     stats.incrementExecutedRequests();
-    return sendAndTransform(requestId, environmentId);
+    return sendAndTransform({ requestId, environmentId });
   };
 }
 
-async function sendAndTransform(requestId, environmentId) {
+async function sendAndTransform({ requestId, environmentId }: { requestId: string; environmentId?: string; }) {
   try {
     plugins.ignorePlugin('insomnia-plugin-kong-bundle');
     const res = await send(requestId, environmentId);
-    const headersObj = {};
+    const headersObj: Record<string, string> = {};
 
     for (const h of res.headers || []) {
       const name = h.name || '';
