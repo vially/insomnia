@@ -1,15 +1,15 @@
-import appConfig from '../config/config.json';
 import childProcess from 'child_process';
-import webpack from 'webpack';
+import { promises, readFileSync, writeFileSync } from 'fs';
 import licenseChecker from 'license-checker';
-import rimraf from 'rimraf';
+import mkdirp from 'mkdirp';
 import { ncp } from 'ncp';
 import path from 'path';
-import mkdirp from 'mkdirp';
-import { readFileSync, writeFileSync, promises } from 'fs';
-import { getBuildContext } from './getBuildContext';
-import productionWebpackConfig from '../webpack/webpack.config.production';
+import rimraf from 'rimraf';
+import webpack from 'webpack';
+import appConfig from '../config/config.json';
 import electronWebpackConfig from '../webpack/webpack.config.electron';
+import productionWebpackConfig from '../webpack/webpack.config.production';
+import { getBuildContext } from './getBuildContext';
 
 const { readFile, writeFile } = promises;
 
@@ -217,8 +217,8 @@ export const start = async ({ forceFromGitRef }: { forceFromGitRef: boolean }) =
   console.log(`[build] npm: ${childProcess.spawnSync('npm', ['--version']).stdout}`.trim());
   console.log(`[build] node: ${childProcess.spawnSync('node', ['--version']).stdout}`.trim());
 
-  if (process.version.indexOf('v12.') !== 0) {
-    console.log('[build] Node v12.x.x is required to build');
+  if (process.version.indexOf('v14.') !== 0) {
+    console.log('[build] Node v14.x.x is required to build');
     process.exit(1);
   }
 
